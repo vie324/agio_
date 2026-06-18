@@ -1,0 +1,1015 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Atelier — 予約管理</title>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;500&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+--ink:#1A1612;--ink-m:#4A4540;--ink-l:#8A857F;
+--sand:#F5F0E8;--sand-d:#EAE3D5;--cream:#FDFAF5;
+--gold:#C9A84C;--accent:#2C4A3E;--accent-l:#E8F0ED;
+--red:#B94040;--green:#2C7A4E;
+--h:56px; /* topbar height */
+--col:170px; /* stylist column width */
+--row:72px; /* time row height */
+}
+body{font-family:'DM Sans',sans-serif;background:var(--sand);color:var(--ink);height:100vh;display:flex;flex-direction:column;overflow:hidden}
+
+/* ── TOP HEADER ── */
+.topbar{height:var(--h);background:var(--ink);display:flex;align-items:center;padding:0 16px;gap:0;flex-shrink:0;border-bottom:1px solid rgba(255,255,255,0.08)}
+.logo{font-family:'Cormorant Garamond',serif;font-size:18px;color:#F5F0E8;letter-spacing:0.08em;white-space:nowrap;padding-right:20px;border-right:1px solid rgba(255,255,255,0.1)}
+.top-nav{display:flex;align-items:center;gap:2px;padding:0 12px}
+.tnav{display:flex;align-items:center;gap:6px;padding:7px 14px;font-size:12px;color:rgba(255,255,255,0.5);cursor:pointer;border-radius:6px;transition:all 0.15s;white-space:nowrap}
+.tnav i{font-size:15px}
+.tnav:hover{color:rgba(255,255,255,0.85);background:rgba(255,255,255,0.06)}
+.tnav.active{color:#F5F0E8;background:rgba(201,168,76,0.15)}
+.top-right{margin-left:auto;display:flex;align-items:center;gap:8px}
+.date-badge{font-size:11px;color:rgba(255,255,255,0.45);padding:0 14px;border-right:1px solid rgba(255,255,255,0.1);white-space:nowrap}
+.tbtn{width:32px;height:32px;border:1px solid rgba(255,255,255,0.12);background:none;border-radius:6px;display:flex;align-items:center;justify-content:center;cursor:pointer;color:rgba(255,255,255,0.5)}
+.tbtn:hover{background:rgba(255,255,255,0.08);color:rgba(255,255,255,0.85)}
+.tbtn i{font-size:16px}
+.btn-new{display:flex;align-items:center;gap:5px;padding:7px 14px;background:var(--gold);color:var(--ink);border:none;border-radius:6px;font-size:12px;font-weight:500;font-family:'DM Sans',sans-serif;cursor:pointer;white-space:nowrap}
+.btn-new i{font-size:14px}
+
+/* ── PAGE WRAPPER ── */
+.page{display:none;flex:1;overflow:hidden}
+.page.active{display:flex;flex-direction:column}
+
+/* ══════════════════════════════════════
+BOARD PAGE (schedule)
+══════════════════════════════════════ */
+.board-controls{height:44px;background:var(--cream);border-bottom:1px solid var(--sand-d);display:flex;align-items:center;padding:0 16px;gap:10px;flex-shrink:0}
+.cal-nav-row{display:flex;align-items:center;gap:6px}
+.cal-arrow{width:26px;height:26px;border:1px solid var(--sand-d);background:var(--cream);border-radius:5px;display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--ink-m)}
+.cal-arrow i{font-size:14px}
+.cal-today{font-size:13px;font-weight:500;color:var(--ink);min-width:100px}
+.view-tabs{display:flex;gap:0;border:1px solid var(--sand-d);border-radius:6px;overflow:hidden;background:var(--cream)}
+.view-tab{padding:5px 12px;font-size:11px;color:var(--ink-l);cursor:pointer;border-right:1px solid var(--sand-d);transition:all 0.15s}
+.view-tab:last-child{border-right:none}
+.view-tab.active{background:var(--accent);color:#fff}
+.bc-sep{width:1px;height:20px;background:var(--sand-d);margin:0 4px}
+.filter-staff{display:flex;gap:5px;flex-wrap:wrap}
+.staff-chip{display:flex;align-items:center;gap:5px;padding:3px 10px;border-radius:20px;border:1px solid var(--sand-d);font-size:11px;cursor:pointer;transition:all 0.15s;white-space:nowrap}
+.staff-chip.on{border-color:transparent}
+.staff-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0}
+.bc-summary{margin-left:auto;display:flex;align-items:center;gap:14px}
+.bc-sum-item{font-size:11px;color:var(--ink-l)}
+.bc-sum-val{font-weight:500;color:var(--ink);margin-left:3px}
+
+/* Board scroll container */
+.board-scroll{flex:1;overflow:auto;position:relative}
+.board-grid{display:flex;min-width:max-content}
+
+/* Sticky left column */
+.board-left{width:58px;flex-shrink:0;position:sticky;left:0;z-index:20;background:var(--cream);border-right:2px solid var(--sand-d)}
+.board-left-head{height:52px;border-bottom:1px solid var(--sand-d);display:flex;align-items:center;justify-content:center;font-size:9px;letter-spacing:0.1em;color:var(--ink-l);text-transform:uppercase}
+.time-slot{height:var(--row);border-bottom:1px solid var(--sand-d);display:flex;align-items:flex-start;justify-content:center;padding-top:6px;font-size:10px;color:var(--ink-l);letter-spacing:0.06em;position:relative}
+.time-slot::after{content:'';position:absolute;right:0;top:50%;width:6px;height:1px;background:var(--sand-d)}
+
+/* Staff columns */
+.board-cols{display:flex;flex:1}
+.staff-col{width:var(--col);border-right:1px solid var(--sand-d);flex-shrink:0;position:relative}
+.staff-head{height:52px;border-bottom:1px solid var(--sand-d);background:var(--cream);position:sticky;top:0;z-index:15;display:flex;align-items:center;gap:8px;padding:0 10px}
+.sh-avatar{width:30px;height:30px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:500;flex-shrink:0}
+.sh-name{font-size:12px;font-weight:500;color:var(--ink);line-height:1.2}
+.sh-count{font-size:10px;color:var(--ink-l)}
+.col-body{position:relative}
+.hour-cell{height:var(--row);border-bottom:1px solid var(--sand-d);background:var(--cream);position:relative}
+.hour-cell:nth-child(even){background:rgba(245,240,232,0.4)}
+.half-line{position:absolute;top:50%;left:0;right:0;height:1px;background:var(--sand-d);opacity:0.5}
+
+/* Booking blocks */
+.booking-block{position:absolute;left:4px;right:4px;border-radius:6px;padding:5px 7px;overflow:hidden;cursor:pointer;transition:all 0.15s;z-index:5}
+.booking-block:hover{filter:brightness(0.93);z-index:10;box-shadow:0 3px 10px rgba(0,0,0,0.12)}
+.bb-time{font-size:10px;opacity:0.8;letter-spacing:0.04em;margin-top:2px}
+.bb-name{font-size:12px;font-weight:600;line-height:1.2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.bb-menu{font-size:10px;opacity:0.8;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:1px}
+.bb-status{position:absolute;top:5px;right:5px;width:6px;height:6px;border-radius:50%}
+
+/* Current time line */
+.now-line{position:absolute;left:0;right:0;height:2px;background:var(--red);z-index:25;pointer-events:none}
+.now-line::before{content:'';position:absolute;left:-3px;top:-4px;width:10px;height:10px;border-radius:50%;background:var(--red)}
+
+/* ══════════════════════════════════════
+BOOKING DETAIL DRAWER
+══════════════════════════════════════ */
+.drawer-bg{display:none;position:fixed;inset:0;background:rgba(26,22,18,0.45);z-index:50}
+.drawer-bg.open{display:block}
+.drawer{position:fixed;right:0;top:0;bottom:0;width:360px;background:var(--cream);box-shadow:-8px 0 32px rgba(0,0,0,0.15);z-index:51;display:flex;flex-direction:column;transform:translateX(100%);transition:transform 0.25s ease}
+.drawer-bg.open .drawer{transform:translateX(0)}
+.drawer-head{padding:18px 20px;border-bottom:1px solid var(--sand);display:flex;align-items:center;justify-content:space-between;flex-shrink:0}
+.drawer-title{font-family:'Cormorant Garamond',serif;font-size:20px;font-weight:300}
+.drawer-close{width:28px;height:28px;border:none;background:none;cursor:pointer;color:var(--ink-l);font-size:18px;border-radius:4px;display:flex;align-items:center;justify-content:center}
+.drawer-close:hover{background:var(--sand)}
+.drawer-body{flex:1;overflow-y:auto;padding:18px 20px}
+.drawer-row{display:flex;gap:10px;align-items:flex-start;padding:10px 0;border-bottom:1px solid var(--sand)}
+.drawer-row:last-child{border:none}
+.drawer-icon{width:30px;height:30px;border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:15px;flex-shrink:0}
+.drawer-label{font-size:10px;letter-spacing:0.1em;text-transform:uppercase;color:var(--ink-l);margin-bottom:3px}
+.drawer-val{font-size:13px;color:var(--ink)}
+.drawer-actions{padding:14px 20px;border-top:1px solid var(--sand);display:flex;gap:8px;flex-shrink:0}
+.daction{flex:1;padding:9px 0;border-radius:6px;font-size:12px;font-family:'DM Sans',sans-serif;cursor:pointer;font-weight:500;border:none;display:flex;align-items:center;justify-content:center;gap:5px}
+.daction i{font-size:14px}
+.daction-karte{background:#E8F0ED;color:#2C4A3E}
+.daction-done{background:var(--accent);color:#fff}
+.daction-cancel{background:#F5F5F5;color:var(--red)}
+
+/* ══════════════════════════════════════
+CUSTOMERS PAGE
+══════════════════════════════════════ */
+.inner-page{flex:1;overflow-y:auto;padding:24px 28px}
+.page-head{display:flex;align-items:flex-end;justify-content:space-between;margin-bottom:20px}
+.page-h1{font-family:'Cormorant Garamond',serif;font-size:26px;font-weight:300}
+.page-sub{font-size:12px;color:var(--ink-l);margin-top:3px}
+.search-row{display:flex;gap:10px;margin-bottom:16px}
+.search-input{flex:1;padding:9px 14px;border:1px solid var(--sand-d);border-radius:8px;font-size:13px;font-family:'DM Sans',sans-serif;background:var(--cream);color:var(--ink);outline:none}
+.search-input:focus{border-color:var(--accent)}
+.sel{padding:9px 12px;border:1px solid var(--sand-d);border-radius:8px;font-size:12px;font-family:'DM Sans',sans-serif;background:var(--cream);color:var(--ink);outline:none}
+.tbl-wrap{background:var(--cream);border:1px solid var(--sand-d);border-radius:10px;overflow:hidden}
+.tbl{width:100%;border-collapse:collapse}
+.tbl th{text-align:left;font-size:10px;letter-spacing:0.12em;color:var(--ink-l);text-transform:uppercase;padding:11px 16px;border-bottom:1px solid var(--sand);font-weight:400}
+.tbl td{padding:11px 16px;font-size:13px;border-bottom:1px solid var(--sand)}
+.tbl tr:last-child td{border-bottom:none}
+.tbl tbody tr{cursor:pointer;transition:background 0.12s}
+.tbl tbody tr:hover td{background:var(--sand)}
+.name-link{font-weight:500;color:var(--accent);display:flex;align-items:center;gap:6px}
+
+/* ══════════════════════════════════════
+KARTE PAGE
+══════════════════════════════════════ */
+.karte-shell{flex:1;display:grid;grid-template-columns:280px 1fr;overflow:hidden}
+.karte-left{background:var(--cream);border-right:1px solid var(--sand-d);overflow-y:auto;display:flex;flex-direction:column}
+.karte-top{padding:20px;border-bottom:1px solid var(--sand);text-align:center}
+.k-avatar{width:64px;height:64px;border-radius:50%;margin:0 auto 12px;display:flex;align-items:center;justify-content:center;font-family:'Cormorant Garamond',serif;font-size:22px}
+.k-name{font-family:'Cormorant Garamond',serif;font-size:20px;font-weight:300}
+.k-meta{font-size:11px;color:var(--ink-l);margin-top:4px;line-height:1.5}
+.k-stats{display:grid;grid-template-columns:repeat(3,1fr);border-top:1px solid var(--sand);border-bottom:1px solid var(--sand)}
+.ks-item{padding:10px 4px;text-align:center;border-right:1px solid var(--sand)}
+.ks-item:last-child{border-right:none}
+.ks-val{font-family:'Cormorant Garamond',serif;font-size:18px}
+.ks-label{font-size:9px;letter-spacing:0.08em;color:var(--ink-l);text-transform:uppercase;margin-top:1px}
+.karte-info{padding:14px 16px}
+.ki-row{display:flex;gap:8px;padding:8px 0;border-bottom:1px solid var(--sand);align-items:flex-start}
+.ki-row:last-child{border:none}
+.ki-icon{width:26px;height:26px;border-radius:5px;display:flex;align-items:center;justify-content:center;font-size:13px;flex-shrink:0}
+.ki-label{font-size:9px;letter-spacing:0.08em;text-transform:uppercase;color:var(--ink-l);margin-bottom:2px}
+.ki-val{font-size:12px;color:var(--ink);line-height:1.5}
+.allergy-tag{display:inline-flex;align-items:center;gap:3px;background:#F5F5F5;color:var(--red);border:1px solid #F5CCCC;border-radius:4px;font-size:10px;padding:2px 6px}
+.karte-right{overflow-y:auto;background:var(--sand)}
+.karte-right-inner{padding:20px 24px}
+.karte-back{display:inline-flex;align-items:center;gap:5px;font-size:12px;color:var(--accent);cursor:pointer;background:none;border:none;font-family:'DM Sans',sans-serif;margin-bottom:14px}
+.ktabs{display:flex;gap:0;background:var(--cream);border:1px solid var(--sand-d);border-radius:8px;overflow:hidden;margin-bottom:16px}
+.ktab{flex:1;padding:10px 6px;text-align:center;font-size:11px;color:var(--ink-l);cursor:pointer;border-right:1px solid var(--sand-d);transition:all 0.15s}
+.ktab:last-child{border-right:none}
+.ktab i{display:block;font-size:16px;margin-bottom:3px}
+.ktab.active{background:var(--accent);color:#fff}
+.kcard{background:var(--cream);border:1px solid var(--sand-d);border-radius:10px;overflow:hidden;margin-bottom:14px}
+.kcard-head{padding:13px 16px;border-bottom:1px solid var(--sand);display:flex;align-items:center;justify-content:space-between}
+.kcard-title{font-size:12px;font-weight:500}
+.btn-sm{display:inline-flex;align-items:center;gap:4px;padding:5px 10px;border:1px solid var(--sand-d);border-radius:5px;font-size:11px;background:none;cursor:pointer;font-family:'DM Sans',sans-serif;color:var(--ink-m)}
+.btn-sm:hover{background:var(--sand)}
+
+/* History */
+.hist-wrap{padding:14px 16px}
+.hist-item{display:flex;gap:10px;padding-bottom:16px;position:relative}
+.hist-item:not(:last-child)::before{content:'';position:absolute;left:13px;top:27px;bottom:0;width:1px;background:var(--sand-d)}
+.hist-dot{width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;flex-shrink:0;border:2px solid var(--cream)}
+.hist-body{flex:1}
+.hist-date{font-size:10px;color:var(--ink-l);margin-bottom:3px}
+.hist-menu{font-size:13px;font-weight:500}
+.hist-amount{font-family:'Cormorant Garamond',serif;font-size:15px;color:var(--ink);margin-top:2px}
+.hist-note{font-size:11px;color:var(--ink-m);background:var(--sand);border-radius:5px;padding:6px 8px;margin-top:6px;line-height:1.6}
+.hist-tags{display:flex;flex-wrap:wrap;gap:4px;margin-top:5px}
+.photo-pair{display:flex;gap:8px;margin-top:8px}
+.photo-box{width:64px;height:64px;border-radius:6px;border:1px solid var(--sand-d);display:flex;align-items:center;justify-content:center;font-size:24px;background:var(--sand);cursor:pointer}
+
+/* Drug */
+.drug-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;padding:12px 16px}
+.drug-card{border:1px solid var(--sand);border-radius:7px;padding:12px}
+.drug-date{font-size:10px;color:var(--ink-l);margin-bottom:6px}
+.drug-type-label{font-size:10px;font-weight:500;letter-spacing:0.06em;text-transform:uppercase;margin-bottom:7px;display:flex;align-items:center;gap:5px}
+.drow{display:flex;justify-content:space-between;font-size:11px;padding:3px 0;border-bottom:1px solid var(--sand)}
+.drow:last-child{border:none}
+.dk{color:var(--ink-l)}.dv{font-weight:500}
+
+/* Next memo */
+.next-box{margin:12px 16px;background:var(--sand);border-radius:8px;padding:14px;border-left:3px solid var(--gold)}
+.next-label{font-size:9px;letter-spacing:0.1em;text-transform:uppercase;color:var(--ink-l);margin-bottom:6px}
+.next-text{font-size:12px;line-height:1.7}
+.next-chips{display:flex;flex-wrap:wrap;gap:6px;margin:10px 16px 16px}
+.nchip{padding:5px 12px;border-radius:20px;background:var(--cream);border:1px solid var(--sand-d);font-size:11px;color:var(--ink-m)}
+
+/* Photo upload */
+.upload-zone{border:2px dashed var(--sand-d);border-radius:8px;padding:28px;text-align:center;color:var(--ink-l);cursor:pointer;margin:12px 16px;transition:border 0.15s}
+.upload-zone:hover{border-color:var(--gold)}
+.upload-zone i{font-size:28px;display:block;margin-bottom:6px}
+.upload-zone p{font-size:11px}
+
+/* ══════════════════════════════════════
+FREELANCE PAGE
+══════════════════════════════════════ */
+.fl-top{background:var(--cream);border-bottom:1px solid var(--sand-d);padding:12px 24px;display:flex;align-items:center;gap:16px;flex-shrink:0}
+.fl-top-title{font-family:'Cormorant Garamond',serif;font-size:20px;font-weight:300;margin-right:auto}
+.rate-box{display:flex;align-items:center;gap:6px;padding:7px 14px;background:var(--sand);border-radius:8px;border:1px solid var(--sand-d)}
+.rate-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+.rate-label{font-size:11px;color:var(--ink-l);white-space:nowrap}
+.rate-input{width:52px;padding:4px 6px;border:1px solid var(--sand-d);border-radius:5px;font-size:13px;font-family:'DM Sans',sans-serif;text-align:center;background:var(--cream);color:var(--ink);outline:none}
+.rate-input:focus{border-color:var(--accent)}
+.rate-pct{font-size:12px;color:var(--ink-m)}
+.fl-body{flex:1;overflow-y:auto;padding:20px 24px}
+.fl-kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:20px}
+.kpi{background:var(--cream);border:1px solid var(--sand-d);border-radius:10px;padding:16px 18px}
+.kpi-label{font-size:10px;letter-spacing:0.1em;text-transform:uppercase;color:var(--ink-l);margin-bottom:8px}
+.kpi-val{font-family:'Cormorant Garamond',serif;font-size:28px;font-weight:400}
+.kpi-sub{font-size:11px;color:var(--ink-l);margin-top:4px}
+/* Staff cards horizontal row */
+.fl-cards{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:20px}
+.fl-card{background:var(--cream);border:1px solid var(--sand-d);border-radius:10px;padding:16px}
+.flc-top{display:flex;align-items:center;gap:10px;margin-bottom:14px}
+.flc-avatar{width:38px;height:38px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:500;flex-shrink:0}
+.flc-name{font-size:13px;font-weight:500}
+.flc-role{font-size:10px;color:var(--ink-l);margin-top:1px}
+.flc-breakdown{margin-bottom:10px}
+.flc-row{display:flex;justify-content:space-between;font-size:11px;padding:4px 0;border-bottom:1px solid var(--sand)}
+.flc-row:last-child{border:none}
+.flc-key{color:var(--ink-l);display:flex;align-items:center;gap:4px}
+.flc-dot{width:6px;height:6px;border-radius:50%;flex-shrink:0}
+.flc-val{font-weight:500}
+.flc-reward{margin-top:10px;padding:8px 10px;background:var(--accent-l);border-radius:6px;display:flex;justify-content:space-between;align-items:center}
+.flc-reward-label{font-size:10px;color:var(--accent)}
+.flc-reward-val{font-family:'Cormorant Garamond',serif;font-size:18px;color:var(--accent);font-weight:400}
+.fl-total-bar{background:var(--cream);border:1px solid var(--sand-d);border-radius:10px;padding:14px 20px;display:flex;align-items:center;gap:20px}
+.ftb-item{text-align:center}
+.ftb-label{font-size:10px;letter-spacing:0.1em;text-transform:uppercase;color:var(--ink-l);margin-bottom:4px}
+.ftb-val{font-family:'Cormorant Garamond',serif;font-size:22px}
+.ftb-sep{width:1px;height:36px;background:var(--sand-d)}
+.btn-csv{margin-left:auto;display:flex;align-items:center;gap:5px;padding:8px 16px;border:1px solid var(--sand-d);border-radius:6px;font-size:12px;background:none;cursor:pointer;font-family:'DM Sans',sans-serif;color:var(--ink-m)}
+
+/* ══════════════════════════════════════
+TAGS & SHARED
+══════════════════════════════════════ */
+.tag{display:inline-flex;align-items:center;font-size:10px;padding:2px 7px;border-radius:20px;font-weight:500;white-space:nowrap}
+.tag-ok{background:#E8F0ED;color:#2C4A3E}
+.tag-pend{background:#FAF4E6;color:#8A6A1A}
+.tag-done{background:var(--sand);color:var(--ink-l)}
+.tag-new{background:#E8F0ED;color:#2C4A3E}
+
+/* NEW BOOKING MODAL */
+.modal-bg{display:none;position:fixed;inset:0;background:rgba(26,22,18,0.55);z-index:100;align-items:center;justify-content:center}
+.modal-bg.open{display:flex}
+.modal{background:var(--cream);border-radius:12px;width:420px;max-width:94vw;position:relative}
+.modal-head{padding:20px 24px 14px;border-bottom:1px solid var(--sand)}
+.modal-title{font-family:'Cormorant Garamond',serif;font-size:20px;font-weight:300}
+.mclose{position:absolute;top:16px;right:18px;width:28px;height:28px;border:none;background:none;cursor:pointer;color:var(--ink-l);font-size:18px;border-radius:4px;display:flex;align-items:center;justify-content:center}
+.mclose:hover{background:var(--sand)}
+.modal-body{padding:16px 24px}
+.f-row{margin-bottom:14px}
+.f-row2{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px}
+.f-label{font-size:10px;letter-spacing:0.1em;text-transform:uppercase;color:var(--ink-l);margin-bottom:5px;display:block}
+.f-input{width:100%;padding:8px 10px;border:1px solid var(--sand-d);border-radius:6px;font-size:13px;font-family:'DM Sans',sans-serif;background:var(--cream);color:var(--ink);outline:none}
+.f-input:focus{border-color:var(--accent)}
+.f-select{width:100%;padding:8px 10px;border:1px solid var(--sand-d);border-radius:6px;font-size:13px;font-family:'DM Sans',sans-serif;background:var(--cream);color:var(--ink);outline:none}
+.modal-foot{padding:12px 24px;border-top:1px solid var(--sand);display:flex;justify-content:flex-end;gap:8px}
+.btn-cancel{padding:8px 16px;border:1px solid var(--sand-d);border-radius:6px;font-size:12px;background:none;cursor:pointer;font-family:'DM Sans',sans-serif;color:var(--ink-m)}
+.btn-save{padding:8px 18px;border:none;border-radius:6px;font-size:12px;background:var(--accent);color:#fff;cursor:pointer;font-family:'DM Sans',sans-serif;font-weight:500}
+</style>
+</head>
+<body>
+
+<!-- ══ TOP HEADER ══ -->
+<div class="topbar">
+<div class="logo">Atelier</div>
+<div class="top-nav">
+<div class="tnav active" id="tnav-board" onclick="showPage('board')"><i class="ti ti-calendar-event"></i>予約ボード</div>
+<div class="tnav" id="tnav-customers" onclick="showPage('customers')"><i class="ti ti-users"></i>顧客管理</div>
+<div class="tnav" id="tnav-freelance" onclick="showPage('freelance')"><i class="ti ti-receipt"></i>業務委託</div>
+<div class="tnav" id="tnav-sales"><i class="ti ti-chart-bar"></i>売上</div>
+<div class="tnav" id="tnav-settings"><i class="ti ti-settings"></i>設定</div>
+</div>
+<div class="top-right">
+<div class="date-badge">2026年5月30日（土）</div>
+<div class="tbtn"><i class="ti ti-bell"></i></div>
+<button class="btn-new" onclick="document.getElementById('modal').classList.add('open')">
+<i class="ti ti-plus"></i>新規予約
+</button>
+</div>
+</div>
+
+<!-- ══════════════════════════════════════
+PAGE: BOARD
+══════════════════════════════════════ -->
+<div class="page active" id="page-board">
+<div class="board-controls">
+<div class="cal-nav-row">
+<div class="cal-arrow"><i class="ti ti-chevron-left"></i></div>
+<div class="cal-today">5月30日（土）</div>
+<div class="cal-arrow"><i class="ti ti-chevron-right"></i></div>
+</div>
+<div class="view-tabs">
+<div class="view-tab active">日</div>
+<div class="view-tab">週</div>
+<div class="view-tab">月</div>
+</div>
+<div class="bc-sep"></div>
+<div class="filter-staff">
+<div class="staff-chip on" style="background:#E8F0ED;color:#2C4A3E;border-color:#C5D9D4"><div class="staff-dot" style="background:#2C4A3E"></div>田中 京子</div>
+<div class="staff-chip on" style="background:#FAF4E6;color:#8A6A1A;border-color:#E0CDA0"><div class="staff-dot" style="background:#C9A84C"></div>加藤 ひかり</div>
+<div class="staff-chip on" style="background:#E8F0ED;color:#2C4A3E;border-color:#D5C8ED"><div class="staff-dot" style="background:#7B5EA7"></div>吉田 早苗</div>
+<div class="staff-chip on" style="background:#E8F0ED;color:#2C4A3E;border-color:#B8DDD0"><div class="staff-dot" style="background:#2C7A4E"></div>本田 まい</div>
+</div>
+<div class="bc-summary">
+<div class="bc-sum-item">予約<span class="bc-sum-val">14件</span></div>
+<div class="bc-sum-item">来店済<span class="bc-sum-val" style="color:var(--green)">6</span></div>
+<div class="bc-sum-item">売上<span class="bc-sum-val">¥127k</span></div>
+</div>
+</div>
+
+<div class="board-scroll">
+<div class="board-grid">
+
+<!-- Time axis -->
+<div class="board-left">
+<div class="board-left-head">時刻</div>
+<div class="time-slot">9:00</div>
+<div class="time-slot">10:00</div>
+<div class="time-slot">11:00</div>
+<div class="time-slot">12:00</div>
+<div class="time-slot">13:00</div>
+<div class="time-slot">14:00</div>
+<div class="time-slot">15:00</div>
+<div class="time-slot">16:00</div>
+<div class="time-slot">17:00</div>
+<div class="time-slot">18:00</div>
+<div class="time-slot">19:00</div>
+</div>
+
+<!-- Staff columns -->
+<div class="board-cols">
+
+<!-- 田中 京子 -->
+<div class="staff-col">
+<div class="staff-head">
+<div class="sh-avatar" style="background:#E8F0ED;color:#2C4A3E">TK</div>
+<div><div class="sh-name">田中 京子</div><div class="sh-count">5件</div></div>
+</div>
+<div class="col-body" style="height:calc(var(--row)*11)">
+<div class="hour-cell"><div class="half-line"></div></div>
+<div class="hour-cell"><div class="half-line"></div></div>
+<div class="hour-cell"><div class="half-line"></div></div>
+<div class="hour-cell"><div class="half-line"></div></div>
+<div class="hour-cell"><div class="half-line"></div></div>
+<div class="hour-cell"><div class="half-line"></div></div>
+<div class="hour-cell"><div class="half-line"></div></div>
+<div class="hour-cell"><div class="half-line"></div></div>
+<div class="hour-cell"><div class="half-line"></div></div>
+<div class="hour-cell"><div class="half-line"></div></div>
+<div class="hour-cell"><div class="half-line"></div></div>
+<!-- blocks: top = (hour-9)*72 + min/60*72 -->
+<!-- 10:00 1h (cut+treat) -->
+<div class="booking-block" style="top:72px;height:72px;background:#2C4A3E;color:#fff" onclick="openDrawer('yamada-1030')">
+<div class="bb-time">10:00 — 11:00</div>
+<div class="bb-name">山田 花子</div>
+<div class="bb-menu">カット+トリートメント</div>
+<div class="bb-status" style="background:#a8e6c4"></div>
+</div>
+<!-- 11:30 2h (highlight) -->
+<div class="booking-block" style="top:180px;height:144px;background:#2C4A3E;color:#fff" onclick="openDrawer('sato-1130')">
+<div class="bb-time">11:30 — 13:30</div>
+<div class="bb-name">佐藤 めぐみ</div>
+<div class="bb-menu">ハイライトカラー</div>
+<div class="bb-status" style="background:#FFD580"></div>
+</div>
+<!-- 14:30 45m (cut) -->
+<div class="booking-block" style="top:396px;height:54px;background:#2C4A3E;color:#fff" onclick="openDrawer('suzuki-1430')">
+<div class="bb-time">14:30 — 15:15</div>
+<div class="bb-name">鈴木 理恵</div>
+<div class="bb-menu">カット</div>
+<div class="bb-status" style="background:#FFD580"></div>
+</div>
+<!-- 16:00 1h (cut) -->
+<div class="booking-block" style="top:504px;height:72px;background:#2C4A3E;color:#fff" onclick="openDrawer('ito-1600')">
+<div class="bb-time">16:00 — 17:00</div>
+<div class="bb-name">小林 純子</div>
+<div class="bb-menu">カット</div>
+<div class="bb-status" style="background:rgba(255,255,255,0.4)"></div>
+</div>
+<!-- 17:30 1h30 (color+cut) -->
+<div class="booking-block" style="top:612px;height:108px;background:#2C4A3E;color:#fff" onclick="openDrawer('goto-1730')">
+<div class="bb-time">17:30 — 19:00</div>
+<div class="bb-name">後藤 美樹</div>
+<div class="bb-menu">カット+カラー</div>
+<div class="bb-status" style="background:rgba(255,255,255,0.4)"></div>
+</div>
+</div>
+</div>
+
+<!-- 加藤 ひかり -->
+<div class="staff-col">
+<div class="staff-head">
+<div class="sh-avatar" style="background:#FAF4E6;color:#8A6A1A">KH</div>
+<div><div class="sh-name">加藤 ひかり</div><div class="sh-count">4件</div></div>
+</div>
+<div class="col-body" style="height:calc(var(--row)*11)">
+<div class="hour-cell"><div class="half-line"></div></div>
+<div class="hour-cell"><div class="half-line"></div></div>
+<div class="hour-cell"><div class="half-line"></div></div>
+<div class="hour-cell"><div class="half-line"></div></div>
+<div class="hour-cell"><div class="half-line"></div></div>
+<div class="hour-cell"><div class="half-line"></div></div>
+<div class="hour-cell"><div class="half-line"></div></div>
+<div class="hour-cell"><div class="half-line"></div></div>
+<div class="hour-cell"><div class="half-line"></div></div>
+<div class="hour-cell"><div class="half-line"></div></div>
+<div class="hour-cell"><div class="half-line"></div></div>
+<!-- 10:30 2.5h perm -->
+<div class="booking-block" style="top:108px;height:180px;background:#C9A84C;color:#2D1A00" onclick="openDrawer('kimura-1030')">
+<div class="bb-time">10:30 — 13:00</div>
+<div class="bb-name">木村 奈々</div>
+<div class="bb-menu">デジタルパーマ</div>
+<div class="bb-status" style="background:#a8e6c4"></div>
+</div>
+<!-- 13:30 1h (cut) -->
+<div class="booking-block" style="top:324px;height:72px;background:#C9A84C;color:#2D1A00" onclick="openDrawer('tanaka-1330')">
+<div class="bb-time">13:30 — 14:30</div>
+<div class="bb-name">田村 由香</div>
+<div class="bb-menu">カット</div>
+<div class="bb-status" style="background:rgba(255,255,255,0.4)"></div>
+</div>
+<!-- 16:00 2h gray color -->
+<div class="booking-block" style="top:504px;height:144px;background:#C9A84C;color:#2D1A00" onclick="openDrawer('nakamura-1600')">
+<div class="bb-time">16:00 — 18:00</div>
+<div class="bb-name">中村 真理子</div>
+<div class="bb-menu">グレイカラー</div>
+<div class="bb-status" style="background:rgba(255,255,255,0.4)"></div>
+</div>
+</div>
+</div>
+
+<!-- 吉田 早苗 -->
+<div class="staff-col">
+<div class="staff-head">
+<div class="sh-avatar" style="background:#E8F0ED;color:#2C4A3E">YS</div>
+<div><div class="sh-name">吉田 早苗</div><div class="sh-count">3件</div></div>
+</div>
+<div class="col-body" style="height:calc(var(--row)*11)">
+<div class="hour-cell"><div class="half-line"></div></div>
+<div class="hour-cell"><div class="half-line"></div></div>
+<div class="hour-cell"><div class="half-line"></div></div>
+<div class="hour-cell"><div class="half-line"></div></div>
+<div class="hour-cell"><div class="half-line"></div></div>
+<div class="hour-cell"><div class="half-line"></div></div>
+<div class="hour-cell"><div class="half-line"></div></div>
+<div class="hour-cell"><div class="half-line"></div></div>
+<div class="hour-cell"><div class="half-line"></div></div>
+<div class="hour-cell"><div class="half-line"></div></div>
+<div class="hour-cell"><div class="half-line"></div></div>
+<!-- 10:00 1h cut -->
+<div class="booking-block" style="top:72px;height:72px;background:#7B5EA7;color:#fff" onclick="openDrawer('watanabe-1000')">
+<div class="bb-time">10:00 — 11:00</div>
+<div class="bb-name">渡辺 京</div>
+<div class="bb-menu">カット</div>
+<div class="bb-status" style="background:#a8e6c4"></div>
+</div>
+<!-- 13:00 3h straight -->
+<div class="booking-block" style="top:288px;height:216px;background:#7B5EA7;color:#fff" onclick="openDrawer('ito-1300')">
+<div class="bb-time">13:00 — 16:00</div>
+<div class="bb-name">伊藤 さくら</div>
+<div class="bb-menu">縮毛矯正</div>
+<div class="bb-status" style="background:rgba(255,255,255,0.4)"></div>
+</div>
+<!-- 17:00 1h -->
+<div class="booking-block" style="top:576px;height:72px;background:#7B5EA7;color:#fff" onclick="openDrawer('hayashi-1700')">
+<div class="bb-time">17:00 — 18:00</div>
+<div class="bb-name">林 奈緒</div>
+<div class="bb-menu">カット+トリートメント</div>
+<div class="bb-status" style="background:rgba(255,255,255,0.4)"></div>
+</div>
+</div>
+</div>
+
+<!-- 本田 まい (業務委託) -->
+<div class="staff-col">
+<div class="staff-head">
+<div class="sh-avatar" style="background:#E8F0ED;color:#2C4A3E">HM</div>
+<div>
+<div class="sh-name" style="display:flex;align-items:center;gap:5px">本田 まい <span class="tag tag-pend" style="font-size:9px;padding:1px 5px">委託</span></div>
+<div class="sh-count">4件</div>
+</div>
+</div>
+<div class="col-body" style="height:calc(var(--row)*11)">
+<div class="hour-cell"><div class="half-line"></div></div>
+<div class="hour-cell"><div class="half-line"></div></div>
+<div class="hour-cell"><div class="half-line"></div></div>
+<div class="hour-cell"><div class="half-line"></div></div>
+<div class="hour-cell"><div class="half-line"></div></div>
+<div class="hour-cell"><div class="half-line"></div></div>
+<div class="hour-cell"><div class="half-line"></div></div>
+<div class="hour-cell"><div class="half-line"></div></div>
+<div class="hour-cell"><div class="half-line"></div></div>
+<div class="hour-cell"><div class="half-line"></div></div>
+<div class="hour-cell"><div class="half-line"></div></div>
+<!-- 9:30 1h cut -->
+<div class="booking-block" style="top:36px;height:72px;background:#2C7A4E;color:#fff" onclick="openDrawer('mori-0930')">
+<div class="bb-time">9:30 — 10:30</div>
+<div class="bb-name">森 真由美</div>
+<div class="bb-menu">カット</div>
+<div class="bb-status" style="background:#a8e6c4"></div>
+</div>
+<!-- 11:00 2h color -->
+<div class="booking-block" style="top:144px;height:144px;background:#2C7A4E;color:#fff" onclick="openDrawer('ueda-1100')">
+<div class="bb-time">11:00 — 13:00</div>
+<div class="bb-name">上田 彩花</div>
+<div class="bb-menu">フルカラー</div>
+<div class="bb-status" style="background:#a8e6c4"></div>
+</div>
+<!-- 14:00 1h30 -->
+<div class="booking-block" style="top:360px;height:108px;background:#2C7A4E;color:#fff" onclick="openDrawer('kondo-1400')">
+<div class="bb-time">14:00 — 15:30</div>
+<div class="bb-name">近藤 由希</div>
+<div class="bb-menu">カット+カラー</div>
+<div class="bb-status" style="background:rgba(255,255,255,0.4)"></div>
+</div>
+<!-- 16:30 1h -->
+<div class="booking-block" style="top:540px;height:72px;background:#2C7A4E;color:#fff" onclick="openDrawer('inoue-1630')">
+<div class="bb-time">16:30 — 17:30</div>
+<div class="bb-name">井上 麗奈</div>
+<div class="bb-menu">カット</div>
+<div class="bb-status" style="background:rgba(255,255,255,0.4)"></div>
+</div>
+</div>
+</div>
+
+</div><!-- /board-cols -->
+
+<!-- Now line (positioned at ~14:20 = 5h20m from 9:00 = 320/660 * 11 rows) -->
+<div style="position:absolute;top:calc(52px + var(--row)*5.33);left:58px;right:0;height:2px;background:var(--red);z-index:25;pointer-events:none">
+<div style="position:absolute;left:-5px;top:-4px;width:10px;height:10px;border-radius:50%;background:var(--red)"></div>
+<div style="position:absolute;left:8px;top:-8px;font-size:9px;background:var(--red);color:#fff;padding:1px 5px;border-radius:3px;font-weight:500">NOW 14:20</div>
+</div>
+
+</div><!-- /board-grid -->
+</div><!-- /board-scroll -->
+</div><!-- /page-board -->
+
+<!-- ══════════════════════════════════════
+PAGE: CUSTOMERS
+══════════════════════════════════════ -->
+<div class="page" id="page-customers">
+<div class="inner-page">
+<div class="page-head">
+<div>
+<div class="page-h1">顧客管理</div>
+<div class="page-sub">156名登録済み</div>
+</div>
+<button class="btn-new"><i class="ti ti-plus"></i>新規登録</button>
+</div>
+<div class="search-row">
+<input class="search-input" placeholder="🔍　顧客名・電話番号・メニューで検索...">
+<select class="sel"><option>すべて</option><option>既存客</option><option>新規客</option></select>
+<select class="sel"><option>全スタイリスト</option><option>田中 京子</option><option>加藤 ひかり</option><option>吉田 早苗</option></select>
+</div>
+<div class="tbl-wrap">
+<table class="tbl">
+<thead><tr>
+<th>お客様名</th><th>区分</th><th>担当</th><th>最終来店</th><th>来店回数</th><th>前回メニュー</th><th>次回提案</th>
+</tr></thead>
+<tbody>
+<tr onclick="openKarte('yamada','customers')">
+<td><div class="name-link"><div style="width:26px;height:26px;border-radius:50%;background:#E8F0ED;color:#2C4A3E;display:flex;align-items:center;justify-content:center;font-size:10px;flex-shrink:0">YH</div>山田 花子 <i class="ti ti-chevron-right" style="font-size:12px;opacity:0.5"></i></div></td>
+<td><span class="tag tag-ok">既存客</span></td><td>田中 京子</td><td>2026/05/30</td><td>28回</td><td>カット+トリートメント</td><td style="font-size:11px;color:var(--ink-l)">ハイライト提案済</td>
+</tr>
+<tr onclick="openKarte('sato','customers')">
+<td><div class="name-link"><div style="width:26px;height:26px;border-radius:50%;background:#FAF4E6;color:#8A6A1A;display:flex;align-items:center;justify-content:center;font-size:10px;flex-shrink:0">SM</div>佐藤 めぐみ <i class="ti ti-chevron-right" style="font-size:12px;opacity:0.5"></i></div></td>
+<td><span class="tag tag-ok">既存客</span></td><td>田中 京子</td><td>2026/05/30</td><td>15回</td><td>ハイライトカラー</td><td style="font-size:11px;color:var(--ink-l)">グロスカラー検討</td>
+</tr>
+<tr onclick="openKarte('kimura','customers')">
+<td><div class="name-link"><div style="width:26px;height:26px;border-radius:50%;background:#E8F0ED;color:#2C4A3E;display:flex;align-items:center;justify-content:center;font-size:10px;flex-shrink:0">KN</div>木村 奈々 <i class="ti ti-chevron-right" style="font-size:12px;opacity:0.5"></i></div></td>
+<td><span class="tag tag-new">新規客</span></td><td>加藤 ひかり</td><td>2026/05/30</td><td>2回</td><td>デジタルパーマ</td><td style="font-size:11px;color:var(--ink-l)">3ヶ月後パーマ強め</td>
+</tr>
+<tr onclick="openKarte('ito','customers')">
+<td><div class="name-link"><div style="width:26px;height:26px;border-radius:50%;background:#E8F0ED;color:#2C4A3E;display:flex;align-items:center;justify-content:center;font-size:10px;flex-shrink:0">IS</div>伊藤 さくら <i class="ti ti-chevron-right" style="font-size:12px;opacity:0.5"></i></div></td>
+<td><span class="tag tag-ok">既存客</span></td><td>吉田 早苗</td><td>2026/05/30</td><td>9回</td><td>縮毛矯正</td><td style="font-size:11px;color:var(--ink-l)">秋にカラー提案</td>
+</tr>
+<tr onclick="openKarte('nakamura','customers')">
+<td><div class="name-link"><div style="width:26px;height:26px;border-radius:50%;background:#FAF4E6;color:#8A6A1A;display:flex;align-items:center;justify-content:center;font-size:10px;flex-shrink:0">NM</div>中村 真理子 <i class="ti ti-chevron-right" style="font-size:12px;opacity:0.5"></i></div></td>
+<td><span class="tag tag-ok">既存客</span></td><td>加藤 ひかり</td><td>2026/05/30</td><td>42回</td><td>グレイカラー</td><td style="font-size:11px;color:var(--ink-l)">2ヶ月後リタッチ</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+</div>
+
+<!-- ══════════════════════════════════════
+PAGE: KARTE
+══════════════════════════════════════ -->
+<div class="page" id="page-karte">
+<div class="karte-shell">
+<!-- Left profile -->
+<div class="karte-left">
+<div style="padding:12px 16px;border-bottom:1px solid var(--sand);flex-shrink:0">
+<button class="karte-back" id="karte-back-btn" onclick="showPage('customers')"><i class="ti ti-arrow-left"></i>一覧へ戻る</button>
+</div>
+<div class="karte-top">
+<div class="k-avatar" id="k-avatar" style="background:#E8F0ED;color:#2C4A3E">山花</div>
+<div class="k-name" id="k-name">山田 花子</div>
+<div class="k-meta" id="k-meta">090-1234-5678<br>1985年生まれ</div>
+<div style="margin-top:8px" id="k-type"><span class="tag tag-ok">既存客</span></div>
+</div>
+<div class="k-stats">
+<div class="ks-item"><div class="ks-val" id="k-visits">28</div><div class="ks-label">来店回数</div></div>
+<div class="ks-item"><div class="ks-val" id="k-ltv">¥336k</div><div class="ks-label">累計売上</div></div>
+<div class="ks-item"><div class="ks-val" id="k-interval">45日</div><div class="ks-label">平均周期</div></div>
+</div>
+<div class="karte-info">
+<div class="ki-row">
+<div class="ki-icon" style="background:#E8F0ED;color:#2C4A3E"><i class="ti ti-user"></i></div>
+<div><div class="ki-label">担当</div><div class="ki-val" id="k-stylist">田中 京子</div></div>
+</div>
+<div class="ki-row">
+<div class="ki-icon" style="background:#FAF4E6;color:#8A6A1A"><i class="ti ti-sparkles"></i></div>
+<div><div class="ki-label">髪質</div><div class="ki-val">細め・軟毛・多毛<br>パサつきあり</div></div>
+</div>
+<div class="ki-row">
+<div class="ki-icon" style="background:#F5F5F5;color:#B94040"><i class="ti ti-alert-triangle"></i></div>
+<div><div class="ki-label">アレルギー</div><div><span class="allergy-tag"><i class="ti ti-alert-circle" style="font-size:10px"></i>ジアミンアレルギー歴</span><div style="font-size:11px;color:var(--ink-m);margin-top:4px">パッチテスト必須</div></div></div>
+</div>
+<div class="ki-row">
+<div class="ki-icon" style="background:#E8F0ED;color:#2C4A3E"><i class="ti ti-calendar"></i></div>
+<div><div class="ki-label">最終来店</div><div class="ki-val">2026年5月30日</div></div>
+</div>
+<div class="ki-row" style="border:none">
+<div class="ki-icon" style="background:var(--sand);color:var(--ink-m)"><i class="ti ti-calendar-plus"></i></div>
+<div><div class="ki-label">次回予定</div><div class="ki-val">7月中旬（提案済）</div></div>
+</div>
+</div>
+</div>
+
+<!-- Right content -->
+<div class="karte-right">
+<div class="karte-right-inner">
+<div class="ktabs">
+<div class="ktab active" onclick="switchKtab(this,'ktab-hist')"><i class="ti ti-history"></i>施術履歴</div>
+<div class="ktab" onclick="switchKtab(this,'ktab-drug')"><i class="ti ti-flask"></i>薬剤記録</div>
+<div class="ktab" onclick="switchKtab(this,'ktab-photo')"><i class="ti ti-camera"></i>写真</div>
+<div class="ktab" onclick="switchKtab(this,'ktab-next')"><i class="ti ti-bulb"></i>次回提案</div>
+</div>
+
+<!-- 施術履歴 -->
+<div id="ktab-hist" class="ktab-content">
+<div class="kcard">
+<div class="kcard-head"><div class="kcard-title">施術履歴</div><button class="btn-sm"><i class="ti ti-plus"></i>新規記録</button></div>
+<div class="hist-wrap">
+<div class="hist-item">
+<div class="hist-dot" style="background:#2C4A3E;color:#fff"><i class="ti ti-scissors" style="font-size:10px"></i></div>
+<div class="hist-body">
+<div class="hist-date">2026年5月30日（土）　田中 京子</div>
+<div class="hist-menu">カット + トリートメント</div>
+<div class="hist-amount">¥13,200</div>
+<div class="hist-tags">
+<span class="tag tag-ok">カット</span>
+<span class="tag" style="background:#E8D5A3;color:#4A3000">トリートメント</span>
+</div>
+<div class="hist-note">前回より2cm短め。毛先のパサつきが気になるとのこと。次回ハイライト希望あり。パッチテスト済み。</div>
+<div class="photo-pair">
+<div class="photo-box">🖼</div>
+<div class="photo-box">✨</div>
+</div>
+</div>
+</div>
+<div class="hist-item">
+<div class="hist-dot" style="background:#C9A84C;color:#fff"><i class="ti ti-palette" style="font-size:10px"></i></div>
+<div class="hist-body">
+<div class="hist-date">2026年4月2日（木）　田中 京子</div>
+<div class="hist-menu">ハイライトカラー + カット</div>
+<div class="hist-amount">¥22,000</div>
+<div class="hist-tags">
+<span class="tag tag-pend">ハイライト</span>
+<span class="tag tag-ok">カット</span>
+</div>
+<div class="hist-note">8トーン base。ハイライト10本。仕上がり良好。ジアミンアレルギーのためパッチテスト実施済み（問題なし）。</div>
+</div>
+</div>
+<div class="hist-item">
+<div class="hist-dot" style="background:#E8D5A3;color:#4A3000"><i class="ti ti-scissors" style="font-size:10px"></i></div>
+<div class="hist-body">
+<div class="hist-date">2026年2月14日（土）　田中 京子</div>
+<div class="hist-menu">カット</div>
+<div class="hist-amount">¥8,800</div>
+<div class="hist-note">バレンタイン前。丸みボブ維持。スタイリング相談あり。</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+
+<!-- 薬剤記録 -->
+<div id="ktab-drug" class="ktab-content" style="display:none">
+<div class="kcard">
+<div class="kcard-head"><div class="kcard-title">薬剤・カラー記録</div><button class="btn-sm"><i class="ti ti-plus"></i>追加</button></div>
+<div class="drug-grid">
+<div class="drug-card">
+<div class="drug-date">2026年4月2日</div>
+<div class="drug-type-label"><span style="width:7px;height:7px;border-radius:50%;background:#C9A84C;display:inline-block"></span>ハイライトカラー</div>
+<div class="drow"><span class="dk">ブランド</span><span class="dv">ミルボン オルディーブ</span></div>
+<div class="drow"><span class="dk">色番</span><span class="dv">8-NB / 8-BE</span></div>
+<div class="drow"><span class="dk">オキシ</span><span class="dv">6%</span></div>
+<div class="drow"><span class="dk">放置時間</span><span class="dv">35分</span></div>
+<div class="drow"><span class="dk">パッチテスト</span><span class="dv" style="color:var(--green)">✓ 実施済</span></div>
+</div>
+<div class="drug-card">
+<div class="drug-date">2025年10月18日</div>
+<div class="drug-type-label"><span style="width:7px;height:7px;border-radius:50%;background:#C9A84C;display:inline-block"></span>グロスカラー</div>
+<div class="drow"><span class="dk">ブランド</span><span class="dv">ウエラ コレストン</span></div>
+<div class="drow"><span class="dk">色番</span><span class="dv">7/0 + 7/3</span></div>
+<div class="drow"><span class="dk">オキシ</span><span class="dv">3%</span></div>
+<div class="drow"><span class="dk">放置時間</span><span class="dv">20分</span></div>
+<div class="drow"><span class="dk">仕上がり</span><span class="dv">ツヤ感◎</span></div>
+</div>
+<div class="drug-card" style="border-style:dashed;display:flex;align-items:center;justify-content:center;min-height:120px;cursor:pointer;color:var(--ink-l)">
+<div style="text-align:center"><i class="ti ti-plus" style="font-size:22px;display:block;margin-bottom:5px"></i><span style="font-size:11px">記録を追加</span></div>
+</div>
+</div>
+</div>
+</div>
+
+<!-- 写真 -->
+<div id="ktab-photo" class="ktab-content" style="display:none">
+<div class="kcard">
+<div class="kcard-head"><div class="kcard-title">ビフォーアフター写真</div><button class="btn-sm"><i class="ti ti-upload"></i>アップロード</button></div>
+<div style="padding:12px 16px">
+<div style="font-size:10px;letter-spacing:0.08em;text-transform:uppercase;color:var(--ink-l);margin-bottom:8px">2026年5月30日 — カット</div>
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+<div>
+<div style="font-size:11px;color:var(--ink-l);margin-bottom:5px">ビフォー</div>
+<div style="height:140px;background:linear-gradient(135deg,var(--sand),var(--sand-d));border-radius:7px;border:1px solid var(--sand-d);display:flex;align-items:center;justify-content:center;font-size:36px">📷</div>
+</div>
+<div>
+<div style="font-size:11px;color:var(--ink-l);margin-bottom:5px">アフター</div>
+<div style="height:140px;background:linear-gradient(135deg,#E8F0ED,#C9D9D4);border-radius:7px;border:1px solid var(--sand-d);display:flex;align-items:center;justify-content:center;font-size:36px">✨</div>
+</div>
+</div>
+</div>
+<div class="upload-zone"><i class="ti ti-cloud-upload"></i><p>ドラッグ＆ドロップ または クリックでアップロード</p><p style="margin-top:3px;font-size:10px">JPG / PNG / HEIC</p></div>
+</div>
+</div>
+
+<!-- 次回提案 -->
+<div id="ktab-next" class="ktab-content" style="display:none">
+<div class="kcard">
+<div class="kcard-head"><div class="kcard-title">次回提案メモ</div><button class="btn-sm"><i class="ti ti-edit"></i>編集</button></div>
+<div class="next-box">
+<div class="next-label">次回おすすめ施術</div>
+<div class="next-text">ハイライトから約3ヶ月が経過する7月中旬が次回ベスト。<br>・ハイライトのリタッチ（根元2〜3cm）<br>・グロスカラーで全体のツヤ感アップ<br>・毛先のトリートメント継続<br><br>ホームケアとしてミルボンシャンプーを提案済み。次回使用感を確認。</div>
+</div>
+<div class="next-chips">
+<span class="nchip">📅 7月中旬（目安）</span>
+<span class="nchip">💰 ¥24,000〜 想定</span>
+<span class="nchip">⏱ 約3時間</span>
+</div>
+</div>
+</div>
+
+</div>
+</div>
+</div>
+</div>
+
+<!-- ══════════════════════════════════════
+PAGE: FREELANCE
+══════════════════════════════════════ -->
+<div class="page" id="page-freelance">
+<div class="fl-top">
+<div class="fl-top-title">業務委託スタッフ 報酬計算</div>
+<div style="font-size:11px;color:var(--ink-l);margin-right:8px">2026年5月30日</div>
+<div class="rate-box">
+<div class="rate-dot" style="background:#2C4A3E"></div>
+<span class="rate-label">既存客</span>
+<input class="rate-input" id="rate-ex" type="number" value="60" min="0" max="100" oninput="recalc()">
+<span class="rate-pct">%</span>
+</div>
+<div class="rate-box">
+<div class="rate-dot" style="background:#C9A84C"></div>
+<span class="rate-label">新規客（店舗）</span>
+<input class="rate-input" id="rate-nw" type="number" value="50" min="0" max="100" oninput="recalc()">
+<span class="rate-pct">%</span>
+</div>
+</div>
+<div class="fl-body">
+<div class="fl-kpis">
+<div class="kpi"><div class="kpi-label">委託売上合計</div><div class="kpi-val" id="fk-total">¥127,100</div><div class="kpi-sub">4名 / 13件</div></div>
+<div class="kpi"><div class="kpi-label">既存客売上</div><div class="kpi-val" id="fk-ex">¥84,200</div><div class="kpi-sub" id="fk-ex-rate">@ 60%</div></div>
+<div class="kpi"><div class="kpi-label">新規客売上</div><div class="kpi-val" id="fk-nw">¥42,900</div><div class="kpi-sub" id="fk-nw-rate">@ 50%</div></div>
+<div class="kpi"><div class="kpi-label">報酬合計</div><div class="kpi-val" id="fk-reward" style="color:var(--accent)">—</div><div class="kpi-sub">お支払い予定</div></div>
+</div>
+<div class="fl-cards" id="fl-cards"></div>
+<div class="fl-total-bar">
+<div class="ftb-item"><div class="ftb-label">売上合計</div><div class="ftb-val" id="ft-sales">¥127,100</div></div>
+<div class="ftb-sep"></div>
+<div class="ftb-item"><div class="ftb-label">既存客 報酬</div><div class="ftb-val" id="ft-ex-r" style="color:var(--accent)">—</div></div>
+<div class="ftb-sep"></div>
+<div class="ftb-item"><div class="ftb-label">新規客 報酬</div><div class="ftb-val" id="ft-nw-r" style="color:var(--accent)">—</div></div>
+<div class="ftb-sep"></div>
+<div class="ftb-item"><div class="ftb-label">報酬総計</div><div class="ftb-val" id="ft-total-r" style="color:var(--accent)">—</div></div>
+<button class="btn-csv"><i class="ti ti-download"></i>CSVエクスポート</button>
+</div>
+</div>
+</div>
+
+<!-- ══════════════════════════════════════
+BOOKING DETAIL DRAWER
+══════════════════════════════════════ -->
+<div class="drawer-bg" id="drawer-bg" onclick="closeDrawer(event)">
+<div class="drawer" id="drawer">
+<div class="drawer-head">
+<div class="drawer-title" id="d-title">予約詳細</div>
+<button class="drawer-close" onclick="closeDrawer()"><i class="ti ti-x"></i></button>
+</div>
+<div class="drawer-body" id="d-body"></div>
+<div class="drawer-actions">
+<button class="daction daction-karte" id="d-karte-btn"><i class="ti ti-id-badge"></i>カルテを開く</button>
+<button class="daction daction-done"><i class="ti ti-check"></i>来店済みに</button>
+<button class="daction daction-cancel"><i class="ti ti-x"></i>キャンセル</button>
+</div>
+</div>
+</div>
+
+<!-- NEW BOOKING MODAL -->
+<div class="modal-bg" id="modal">
+<div class="modal">
+<div class="modal-head">
+<div class="modal-title">新規予約を追加</div>
+<button class="mclose" onclick="document.getElementById('modal').classList.remove('open')"><i class="ti ti-x"></i></button>
+</div>
+<div class="modal-body">
+<div class="f-row"><label class="f-label">お客様名</label><input class="f-input" type="text" placeholder="山田 花子"></div>
+<div class="f-row2">
+<div><label class="f-label">日付</label><input class="f-input" type="date" value="2026-05-30"></div>
+<div><label class="f-label">時間</label><input class="f-input" type="time" value="10:00"></div>
+</div>
+<div class="f-row"><label class="f-label">担当スタイリスト</label>
+<select class="f-select"><option>田中 京子</option><option>加藤 ひかり</option><option>吉田 早苗</option><option>本田 まい（委託）</option></select>
+</div>
+<div class="f-row"><label class="f-label">メニュー</label>
+<select class="f-select"><option>カット</option><option>カット+カラー</option><option>ハイライトカラー</option><option>デジタルパーマ</option><option>縮毛矯正</option><option>グレイカラー</option><option>トリートメント</option></select>
+</div>
+<div class="f-row" style="margin:0"><label class="f-label">区分</label>
+<select class="f-select"><option>既存客</option><option>新規客（店舗）</option></select>
+</div>
+</div>
+<div class="modal-foot">
+<button class="btn-cancel" onclick="document.getElementById('modal').classList.remove('open')">キャンセル</button>
+<button class="btn-save">予約を登録</button>
+</div>
+</div>
+</div>
+
+<script>
+// ── PAGE NAV ──
+var navMap = {board:'tnav-board',customers:'tnav-customers',freelance:'tnav-freelance',karte:'tnav-customers'};
+function showPage(p){
+document.querySelectorAll('.page').forEach(function(el){el.classList.remove('active')});
+document.getElementById('page-'+p).classList.add('active');
+document.querySelectorAll('.tnav').forEach(function(el){el.classList.remove('active')});
+if(navMap[p]){var n=document.getElementById(navMap[p]);if(n)n.classList.add('active');}
+}
+
+// ── MODAL ──
+document.getElementById('modal').addEventListener('click',function(e){if(e.target===this)this.classList.remove('open')});
+
+// ── DRAWER ──
+var drawerData = {
+'yamada-1030':{name:'山田 花子',time:'10:00 — 11:00',menu:'カット + トリートメント',stylist:'田中 京子',status:'来店済',amount:'¥13,200',type:'既存客',note:'毛先2cmカット希望',id:'yamada'},
+'sato-1130':{name:'佐藤 めぐみ',time:'11:30 — 13:30',menu:'ハイライトカラー',stylist:'田中 京子',status:'確定',amount:'¥22,000',type:'既存客',note:'ジアミンパッチテスト要確認',id:'sato'},
+'suzuki-1430':{name:'鈴木 理恵',time:'14:30 — 15:15',menu:'カット',stylist:'田中 京子',status:'仮予約',amount:'¥8,800',type:'新規客',note:'—',id:'suzuki'},
+'kimura-1030':{name:'木村 奈々',time:'10:30 — 13:00',menu:'デジタルパーマ',stylist:'加藤 ひかり',status:'来店済',amount:'¥28,600',type:'新規客',note:'パーマ初めて',id:'kimura'},
+'nakamura-1600':{name:'中村 真理子',time:'16:00 — 18:00',menu:'グレイカラー',stylist:'加藤 ひかり',status:'確定',amount:'¥16,500',type:'既存客',note:'毎回同じ色番希望',id:'nakamura'},
+'ito-1300':{name:'伊藤 さくら',time:'13:00 — 16:00',menu:'縮毛矯正',stylist:'吉田 早苗',status:'確定',amount:'¥38,500',type:'既存客',note:'半年に1回のペース',id:'ito'},
+'watanabe-1000':{name:'渡辺 京',time:'10:00 — 11:00',menu:'カット',stylist:'吉田 早苗',status:'来店済',amount:'¥8,800',type:'既存客',note:'—',id:'yamada'},
+'mori-0930':{name:'森 真由美',time:'9:30 — 10:30',menu:'カット',stylist:'本田 まい（委託）',status:'来店済',amount:'¥8,800',type:'既存客',note:'—',id:'yamada'},
+'ueda-1100':{name:'上田 彩花',time:'11:00 — 13:00',menu:'フルカラー',stylist:'本田 まい（委託）',status:'来店済',amount:'¥15,400',type:'新規客',note:'初めてのカラー',id:'yamada'},
+'kondo-1400':{name:'近藤 由希',time:'14:00 — 15:30',menu:'カット+カラー',stylist:'本田 まい（委託）',status:'確定',amount:'¥18,700',type:'既存客',note:'—',id:'yamada'},
+'tanaka-1330':{name:'田村 由香',time:'13:30 — 14:30',menu:'カット',stylist:'加藤 ひかり',status:'確定',amount:'¥8,800',type:'既存客',note:'—',id:'yamada'},
+'ito-1600':{name:'小林 純子',time:'16:00 — 17:00',menu:'カット',stylist:'田中 京子',status:'確定',amount:'¥8,800',type:'既存客',note:'—',id:'yamada'},
+'goto-1730':{name:'後藤 美樹',time:'17:30 — 19:00',menu:'カット+カラー',stylist:'田中 京子',status:'確定',amount:'¥18,700',type:'新規客',note:'インスタ見て来店',id:'yamada'},
+'hayashi-1700':{name:'林 奈緒',time:'17:00 — 18:00',menu:'カット+トリートメント',stylist:'吉田 早苗',status:'確定',amount:'¥13,200',type:'既存客',note:'—',id:'yamada'},
+'inoue-1630':{name:'井上 麗奈',time:'16:30 — 17:30',menu:'カット',stylist:'本田 まい（委託）',status:'確定',amount:'¥8,800',type:'新規客',note:'—',id:'yamada'},
+};
+var statusColor={'来店済':'#a8e6c4','確定':'#FFD580','仮予約':'#F5CCCC'};
+function openDrawer(id){
+var d=drawerData[id];if(!d)return;
+document.getElementById('d-title').textContent=d.name;
+var st=d.status==='来店済'?'tag-ok':d.status==='確定'?'tag-pend':'tag-done';
+var ct=d.type==='既存客'?'tag-ok':'tag-new';
+document.getElementById('d-body').innerHTML=
+'<div class="drawer-row"><div class="drawer-icon" style="background:#E8F0ED;color:#2C4A3E"><i class="ti ti-clock"></i></div><div><div class="drawer-label">時間</div><div class="drawer-val">'+d.time+'</div></div></div>'+
+'<div class="drawer-row"><div class="drawer-icon" style="background:#FAF4E6;color:#8A6A1A"><i class="ti ti-scissors"></i></div><div><div class="drawer-label">メニュー</div><div class="drawer-val">'+d.menu+'</div></div></div>'+
+'<div class="drawer-row"><div class="drawer-icon" style="background:var(--sand);color:var(--ink-m)"><i class="ti ti-user"></i></div><div><div class="drawer-label">担当スタイリスト</div><div class="drawer-val">'+d.stylist+'</div></div></div>'+
+'<div class="drawer-row"><div class="drawer-icon" style="background:var(--sand);color:var(--ink-m)"><i class="ti ti-tag"></i></div><div><div class="drawer-label">ステータス / 区分</div><div class="drawer-val" style="display:flex;gap:6px;margin-top:2px"><span class="tag '+st+'">'+d.status+'</span><span class="tag '+ct+'">'+d.type+'</span></div></div></div>'+
+'<div class="drawer-row"><div class="drawer-icon" style="background:#E8F0ED;color:#2C4A3E"><i class="ti ti-currency-yen"></i></div><div><div class="drawer-label">金額</div><div class="drawer-val" style="font-family:\'Cormorant Garamond\',serif;font-size:20px">'+d.amount+'</div></div></div>'+
+'<div class="drawer-row" style="border:none"><div class="drawer-icon" style="background:var(--sand);color:var(--ink-m)"><i class="ti ti-note"></i></div><div><div class="drawer-label">メモ</div><div class="drawer-val">'+d.note+'</div></div></div>';
+document.getElementById('d-karte-btn').onclick=function(){closeDrawer();openKarte(d.id,'board');};
+document.getElementById('drawer-bg').classList.add('open');
+}
+function closeDrawer(e){
+if(!e||e.target===document.getElementById('drawer-bg'))
+document.getElementById('drawer-bg').classList.remove('open');
+}
+
+// ── KARTE ──
+var karteDB={
+yamada:{name:'山田 花子',init:'山花',bg:'#E8F0ED',fg:'#2C4A3E',meta:'090-1234-5678 / 1985年生まれ',type:'既存客',tc:'tag-ok',visits:'28',ltv:'¥336k',interval:'45日',stylist:'田中 京子'},
+sato:{name:'佐藤 めぐみ',init:'佐め',bg:'#FAF4E6',fg:'#8A6A1A',meta:'090-2345-6789 / 1990年生まれ',type:'既存客',tc:'tag-ok',visits:'15',ltv:'¥182k',interval:'52日',stylist:'田中 京子'},
+kimura:{name:'木村 奈々',init:'木奈',bg:'#F0EBF8',fg:'#5A3D8A',meta:'090-3456-7890 / 1998年生まれ',type:'新規客',tc:'tag-new',visits:'2',ltv:'¥28k',interval:'—',stylist:'加藤 ひかり'},
+ito:{name:'伊藤 さくら',init:'伊さ',bg:'#E8F0ED',fg:'#2C4A3E',meta:'090-4567-8901 / 1988年生まれ',type:'既存客',tc:'tag-ok',visits:'9',ltv:'¥98k',interval:'60日',stylist:'吉田 早苗'},
+nakamura:{name:'中村 真理子',init:'中真',bg:'#FAF4E6',fg:'#8A6A1A',meta:'090-6789-0123 / 1975年生まれ',type:'既存客',tc:'tag-ok',visits:'42',ltv:'¥498k',interval:'42日',stylist:'加藤 ひかり'},
+suzuki:{name:'鈴木 理恵',init:'鈴理',bg:'#F5F0E8',fg:'#4A4540',meta:'090-5678-9012 / 2000年生まれ',type:'新規客',tc:'tag-new',visits:'1',ltv:'¥9k',interval:'—',stylist:'田中 京子'},
+};
+function openKarte(id,from){
+var d=karteDB[id]||karteDB.yamada;
+document.getElementById('k-avatar').textContent=d.init;
+document.getElementById('k-avatar').style.background=d.bg;
+document.getElementById('k-avatar').style.color=d.fg;
+document.getElementById('k-name').textContent=d.name;
+document.getElementById('k-meta').textContent=d.meta;
+document.getElementById('k-type').innerHTML='<span class="tag '+d.tc+'">'+d.type+'</span>';
+document.getElementById('k-visits').textContent=d.visits;
+document.getElementById('k-ltv').textContent=d.ltv;
+document.getElementById('k-interval').textContent=d.interval;
+document.getElementById('k-stylist').textContent=d.stylist;
+var bb=document.getElementById('karte-back-btn');
+bb.setAttribute('onclick',from==='board'?"showPage('board')":"showPage('customers')");
+bb.innerHTML='<i class="ti ti-arrow-left"></i>'+(from==='board'?'ボードへ戻る':'一覧へ戻る');
+// reset tab
+document.querySelectorAll('.ktab').forEach(function(t){t.classList.remove('active')});
+document.querySelectorAll('.ktab-content').forEach(function(t){t.style.display='none'});
+document.querySelector('.ktab').classList.add('active');
+document.getElementById('ktab-hist').style.display='block';
+showPage('karte');
+}
+function switchKtab(el,id){
+document.querySelectorAll('.ktab').forEach(function(t){t.classList.remove('active')});
+document.querySelectorAll('.ktab-content').forEach(function(t){t.style.display='none'});
+el.classList.add('active');
+document.getElementById(id).style.display='block';
+}
+
+// ── FREELANCE CALC ──
+var staffFL=[
+{name:'本田 まい',init:'HM',bg:'#E8F5F0',fg:'#1A6B4A',exSales:26400,nwSales:12000,status:'稼働中'},
+{name:'中島 りか',init:'RN',bg:'#FAF4E6',fg:'#8A6A1A',exSales:18700,nwSales:11000,status:'稼働中'},
+{name:'藤原 けい',init:'KF',bg:'#F0EBF8',fg:'#5A3D8A',exSales:22000,nwSales:13200,status:'稼働中'},
+{name:'奥山 ゆり',init:'YO',bg:'#F5F0E8',fg:'#4A4540',exSales:15400,nwSales:8400,status:'退勤済'},
+];
+function fmt(n){return'¥'+n.toLocaleString('ja-JP')}
+function recalc(){
+var rex=parseInt(document.getElementById('rate-ex').value)||0;
+var rnw=parseInt(document.getElementById('rate-nw').value)||0;
+document.getElementById('fk-ex-rate').textContent='@ '+rex+'%';
+document.getElementById('fk-nw-rate').textContent='@ '+rnw+'%';
+var totalEx=0,totalNw=0,totalRewardEx=0,totalRewardNw=0;
+staffFL.forEach(function(s){totalEx+=s.exSales;totalNw+=s.nwSales;});
+var totalSales=totalEx+totalNw;
+staffFL.forEach(function(s){totalRewardEx+=Math.round(s.exSales*rex/100);totalRewardNw+=Math.round(s.nwSales*rnw/100);});
+var totalReward=totalRewardEx+totalRewardNw;
+document.getElementById('fk-total').textContent=fmt(totalSales);
+document.getElementById('fk-ex').textContent=fmt(totalEx);
+document.getElementById('fk-nw').textContent=fmt(totalNw);
+document.getElementById('fk-reward').textContent=fmt(totalReward);
+document.getElementById('ft-sales').textContent=fmt(totalSales);
+document.getElementById('ft-ex-r').textContent=fmt(totalRewardEx);
+document.getElementById('ft-nw-r').textContent=fmt(totalRewardNw);
+document.getElementById('ft-total-r').textContent=fmt(totalReward);
+// render cards
+var html='';
+staffFL.forEach(function(s){
+var exR=Math.round(s.exSales*rex/100);
+var nwR=Math.round(s.nwSales*rnw/100);
+var total=s.exSales+s.nwSales;
+var reward=exR+nwR;
+var stag=s.status==='稼働中'?'tag-ok':'tag-done';
+html+='<div class="fl-card">'+
+'<div class="flc-top">'+
+'<div class="flc-avatar" style="background:'+s.bg+';color:'+s.fg+'">'+s.init+'</div>'+
+'<div><div class="flc-name">'+s.name+'</div><div class="flc-role">業務委託 <span class="tag '+stag+'" style="margin-left:4px">'+s.status+'</span></div></div>'+
+'</div>'+
+'<div class="flc-breakdown">'+
+'<div class="flc-row"><span class="flc-key"><div class="flc-dot" style="background:#2C4A3E"></div>既存客売上</span><span class="flc-val">'+fmt(s.exSales)+'</span></div>'+
+'<div class="flc-row"><span class="flc-key"><div class="flc-dot" style="background:#C9A84C"></div>新規客売上</span><span class="flc-val">'+fmt(s.nwSales)+'</span></div>'+
+'<div class="flc-row"><span class="flc-key">合計売上</span><span class="flc-val" style="font-family:\'Cormorant Garamond\',serif;font-size:15px">'+fmt(total)+'</span></div>'+
+'<div class="flc-row"><span class="flc-key">既存報酬('+rex+'%)</span><span class="flc-val" style="color:var(--accent)">'+fmt(exR)+'</span></div>'+
+'<div class="flc-row" style="border:none"><span class="flc-key">新規報酬('+rnw+'%)</span><span class="flc-val" style="color:var(--accent)">'+fmt(nwR)+'</span></div>'+
+'</div>'+
+'<div class="flc-reward"><span class="flc-reward-label">報酬合計</span><span class="flc-reward-val">'+fmt(reward)+'</span></div>'+
+'</div>';
+});
+document.getElementById('fl-cards').innerHTML=html;
+}
+recalc();
+</script>
+</body>
+</html>
