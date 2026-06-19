@@ -1,0 +1,37 @@
+import type { BookingStatus, CustomerType } from './types';
+
+// 予約ボードのレイアウト定数
+export const OPEN_HOUR = 9; // 開店（先頭の時刻ラベル）
+export const ROW_COUNT = 11; // 表示する時間枠の数（9:00〜20:00）
+export const ROW_PX = 72; // 1時間あたりの高さ(px)
+export const HOURS: number[] = Array.from({ length: ROW_COUNT }, (_, i) => OPEN_HOUR + i);
+
+export const STATUS_LABEL: Record<BookingStatus, string> = {
+  visited: '来店済',
+  confirmed: '確定',
+  tentative: '仮予約',
+};
+
+// 予約ブロック右上のステータスドット色
+export const STATUS_DOT: Record<BookingStatus, string> = {
+  visited: '#a8e6c4',
+  confirmed: '#FFD580',
+  tentative: 'rgba(255,255,255,0.4)',
+};
+
+// タグ用クラス
+export const STATUS_TAG_CLASS: Record<BookingStatus, string> = {
+  visited: 'tag-ok',
+  confirmed: 'tag-pend',
+  tentative: 'tag-done',
+};
+
+export const TYPE_LABEL: Record<CustomerType, string> = {
+  existing: '既存客',
+  new: '新規客',
+};
+
+export const TYPE_TAG_CLASS: Record<CustomerType, string> = {
+  existing: 'tag-ok',
+  new: 'tag-new',
+};
