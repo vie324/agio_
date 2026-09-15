@@ -1,6 +1,6 @@
 import type { Metadata } from 'next';
 import './globals.css';
-import TopBar from '@/components/TopBar';
+import ConditionalTopBar from '@/components/ConditionalTopBar';
 
 export const metadata: Metadata = {
   title: 'Atelier — 予約管理',
@@ -23,7 +23,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         />
       </head>
       <body>
-        <TopBar />
+        <ConditionalTopBar />
         <main className="app-main">{children}</main>
       </body>
     </html>
