@@ -5,7 +5,7 @@ import { getBrowserSupabase } from '@/lib/supabase/client';
 import type { Staff } from '@/lib/types';
 
 /* ─── LINE / 外部リンク（実際のURLに差し替えてください） ─── */
-const LINE_URL        = 'https://lin.ee/XXXXXXX';   // ← LINE公式アカウントのURL
+const LINE_URL        = 'https://lin.ee/y8NUcXU';
 const GOOGLE_MAPS_URL = 'https://maps.app.goo.gl/XXXXXXX'; // ← GoogleマップのURL
 
 /* ─── メインメニュー ─── */
