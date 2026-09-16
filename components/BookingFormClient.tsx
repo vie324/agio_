@@ -127,79 +127,7 @@ function Header() {
 }
 
 /* ─── LINEゲート ─── */
-function LineGate({ onYes }: { onYes: () => void }) {
-  const [showNo, setShowNo] = useState(false);
-
-  if (showNo) {
-    return (
-      <div className="bk-root">
-        <Header />
-        <div className="bk-body" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: 400 }}>
-          <div style={{ textAlign: 'center', animation: 'fadeUp 0.35s var(--ease) both', maxWidth: 400, width: '100%' }}>
-            <div style={{ fontSize: 40, marginBottom: 16 }}>🌿</div>
-            <div className="bk-section-title" style={{ marginBottom: 8 }}>LINE限定メニューのご案内</div>
-            <div style={{ fontSize: 13, color: 'var(--ink-m)', lineHeight: 1.8, marginBottom: 28 }}>
-              このご予約フォームはLINE公式アカウントにご登録いただいたお客様向けの<strong>LINE限定メニュー</strong>専用です。
-              <br />ご登録いただくとお得な限定価格でご予約いただけます。
-            </div>
-
-            <a
-              href={LINE_URL}
-              target="_blank"
-              rel="noopener noreferrer"
-              style={{
-                display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10,
-                padding: '14px 24px', borderRadius: 12, marginBottom: 12,
-                background: '#06C755', color: '#fff',
-                fontFamily: "'DM Sans',sans-serif", fontSize: 14, fontWeight: 600,
-                textDecoration: 'none', cursor: 'pointer',
-                boxShadow: '0 4px 14px rgba(6,199,85,0.4)',
-                transition: 'all 0.2s',
-              }}
-            >
-              <svg width="22" height="22" viewBox="0 0 40 40" fill="white">
-                <path d="M20 2C10.06 2 2 9.16 2 17.96c0 7.9 6.63 14.5 15.56 15.73.61.13 1.44.4 1.65.92.19.47.12 1.2.06 1.67l-.27 1.6c-.08.47-.38 1.85 1.62.99 2-.86 10.82-6.37 14.76-10.9C37.74 24.5 38 21.32 38 17.96 38 9.16 29.94 2 20 2z"/>
-              </svg>
-              LINE公式アカウントを友達追加する
-            </a>
-
-            <div style={{ fontSize: 12, color: 'var(--ink-l)', margin: '16px 0', display: 'flex', alignItems: 'center', gap: 12 }}>
-              <span style={{ flex: 1, height: 1, background: 'var(--sand-d)' }}></span>
-              または
-              <span style={{ flex: 1, height: 1, background: 'var(--sand-d)' }}></span>
-            </div>
-
-            <a
-              href={GOOGLE_MAPS_URL}
-              target="_blank"
-              rel="noopener noreferrer"
-              style={{
-                display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
-                padding: '12px 24px', borderRadius: 12,
-                background: 'var(--cream)', color: 'var(--ink-m)',
-                border: '1.5px solid var(--sand-d)',
-                fontFamily: "'DM Sans',sans-serif", fontSize: 13, fontWeight: 500,
-                textDecoration: 'none', cursor: 'pointer',
-                boxShadow: 'var(--shadow-sm)',
-                transition: 'all 0.2s',
-              }}
-            >
-              <i className="ti ti-map-pin" style={{ fontSize: 16, color: '#EA4335' }}></i>
-              Googleマップからご予約
-            </a>
-
-            <button
-              onClick={() => setShowNo(false)}
-              style={{ marginTop: 20, background: 'none', border: 'none', color: 'var(--ink-l)', fontSize: 12, cursor: 'pointer', fontFamily: "'DM Sans',sans-serif" }}
-            >
-              ← 戻る
-            </button>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
+function LineGate({ onYes, onNo }: { onYes: () => void; onNo: () => void }) {
   return (
     <div className="bk-root">
       <Header />
@@ -214,18 +142,32 @@ function LineGate({ onYes }: { onYes: () => void }) {
           }}>✂️</div>
           <div className="bk-section-title" style={{ marginBottom: 8 }}>LINEにご登録済みですか？</div>
           <div style={{ fontSize: 13, color: 'var(--ink-l)', lineHeight: 1.8, marginBottom: 32 }}>
-            このフォームはLINE公式アカウント登録者向けの<br />LINE限定価格でご案内しています。
+            LINE公式アカウントにご登録いただくと<br />LINE限定のお得な価格でご予約いただけます。
           </div>
-
           <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
             <button className="bk-next" onClick={onYes} style={{ width: '100%' }}>
               <i className="ti ti-check" style={{ marginRight: 8 }}></i>
-              はい、登録済みです　→ 予約へ進む
+              はい、登録済みです（LINE限定価格）
             </button>
-            <button className="bk-back" onClick={() => setShowNo(true)} style={{ width: '100%', justifyContent: 'center' }}>
-              まだ登録していません
+            <button className="bk-back" onClick={onNo} style={{ width: '100%', justifyContent: 'center' }}>
+              まだ登録していません（通常価格）
             </button>
           </div>
+          <a
+            href={LINE_URL}
+            target="_blank"
+            rel="noopener noreferrer"
+            style={{
+              display: 'inline-flex', alignItems: 'center', gap: 6,
+              marginTop: 20, fontSize: 12, color: '#06C755',
+              textDecoration: 'none', fontFamily: "'DM Sans',sans-serif",
+            }}
+          >
+            <svg width="13" height="13" viewBox="0 0 40 40" fill="#06C755">
+              <path d="M20 2C10.06 2 2 9.16 2 17.96c0 7.9 6.63 14.5 15.56 15.73.61.13 1.44.4 1.65.92.19.47.12 1.2.06 1.67l-.27 1.6c-.08.47-.38 1.85 1.62.99 2-.86 10.82-6.37 14.76-10.9C37.74 24.5 38 21.32 38 17.96 38 9.16 29.94 2 20 2z"/>
+            </svg>
+            LINE登録はこちら（無料）
+          </a>
         </div>
       </div>
     </div>
@@ -234,7 +176,7 @@ function LineGate({ onYes }: { onYes: () => void }) {
 
 /* ─── メインコンポーネント ─── */
 export default function BookingFormClient({ initialStaff }: { initialStaff: Staff[] }) {
-  const [lineOk, setLineOk]       = useState(false);
+  const [lineUser, setLineUser]   = useState<boolean | null>(null);
   const [step, setStep]           = useState(1);
   const [service, setService]     = useState<ServiceItem | null>(null);
   const [addons, setAddons]       = useState<Set<string>>(new Set());
@@ -259,7 +201,8 @@ export default function BookingFormClient({ initialStaff }: { initialStaff: Staf
   /* 合計時間・料金 */
   const selectedAddons   = ADDONS.filter((a) => addons.has(a.id));
   const totalDuration    = (service?.duration ?? 0) + selectedAddons.reduce((s, a) => s + a.duration, 0);
-  const totalPrice       = (service?.price ?? 0) + selectedAddons.reduce((s, a) => s + a.price, 0);
+  const displaySvcPrice  = (p: number) => p + (lineUser === false ? 1000 : 0);
+  const totalPrice       = displaySvcPrice(service?.price ?? 0) + selectedAddons.reduce((s, a) => s + a.price, 0);
 
   useEffect(() => {
     if (!date || !staffSel) return;
@@ -326,7 +269,7 @@ export default function BookingFormClient({ initialStaff }: { initialStaff: Staf
         status:        'tentative',
         customer_type: 'new',
         amount:        totalPrice,
-        note: [note.trim(), email ? `メール: ${email}` : '', `Tel: ${phone}`, 'LINE登録済み'].filter(Boolean).join(' / ') || null,
+        note: [note.trim(), email ? `メール: ${email}` : '', `Tel: ${phone}`, lineUser ? 'LINE登録済み' : 'LINE未登録'].filter(Boolean).join(' / ') || null,
       }).select('id').single();
 
       if (dbErr) throw new Error(dbErr.message);
@@ -340,7 +283,7 @@ export default function BookingFormClient({ initialStaff }: { initialStaff: Staf
   };
 
   /* ─── LINEゲート ─── */
-  if (!lineOk) return <LineGate onYes={() => setLineOk(true)} />;
+  if (lineUser === null) return <LineGate onYes={() => setLineUser(true)} onNo={() => setLineUser(false)} />;
 
   /* ─── DONE ─── */
   if (step === 6) {
@@ -394,7 +337,7 @@ export default function BookingFormClient({ initialStaff }: { initialStaff: Staf
     if (step === 1) return (
       <>
         <div className="bk-section-title">メニューをお選びください</div>
-        <div className="bk-section-sub">LINE限定価格（税込）・所要時間を表示しています</div>
+        <div className="bk-section-sub">{lineUser ? 'LINE限定価格（税込）' : '通常価格（税込）'}・所要時間を表示しています</div>
         <div className="bk-services">
           {SERVICES.map((s) => {
             const sel = service?.id === s.id;
@@ -406,7 +349,7 @@ export default function BookingFormClient({ initialStaff }: { initialStaff: Staf
                   <div className="bk-service-desc">{s.desc}</div>
                 </div>
                 <div className="bk-service-right">
-                  <div className="bk-service-price">{yen(s.price)}</div>
+                  <div className="bk-service-price">{yen(displaySvcPrice(s.price))}</div>
                   <div className="bk-service-duration">{durationLabel(s.duration)}</div>
                 </div>
                 <div className="bk-service-check">
